@@ -5,8 +5,8 @@
 
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries = 3,
-  baseDelayMs = 100
+  maxRetries = 5, // Increased from 3 to 5
+  baseDelayMs = 50  // Reduced from 100 to 50 for faster retries
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -27,7 +27,7 @@ export async function withRetry<T>(
         throw error;
       }
 
-      // Exponential backoff: 100ms, 200ms, 400ms
+      // Exponential backoff: 50ms, 100ms, 200ms, 400ms, 800ms
       const delayMs = baseDelayMs * Math.pow(2, attempt);
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateBoosterRank } from "@/lib/booster-ranks";
+import { withRetry } from "@/lib/db-retry";
 
 export async function GET() {
   const session = await auth();
@@ -11,7 +12,7 @@ export async function GET() {
   }
 
   try {
-    const user = await prisma.user.findUnique({
+    const user = await withRetry(async () => prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
@@ -48,7 +49,7 @@ export async function GET() {
           },
         },
       },
-    });
+    }));
 
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });

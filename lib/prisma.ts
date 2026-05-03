@@ -13,8 +13,11 @@ const globalForPrismaV3 = globalThis as unknown as {
 const pool = globalForPrismaV3.pgPool ?? new Pool({ 
   connectionString,
   max: 5,
-  idleTimeoutMillis: 30000,
+  min: 1,
+  idleTimeoutMillis: 10000, // Reduced from 30000 for faster cleanup
   connectionTimeoutMillis: 2000,
+  reapIntervalMillis: 5000, // Clean up idle connections every 5 seconds
+  allowExitOnIdle: false, // Don't exit, keep pool alive
 });
 
 // Store globally to reuse across requests
