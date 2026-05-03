@@ -1,0 +1,25 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "devCommand": "npm run dev",
+  "framework": "nextjs",
+  "nodejs": "20.x",
+  "env": [
+    "AUTH_SECRET",
+    "NEXT_PUBLIC_APP_URL",
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_STORAGE_SUPABASE_URL",
+    "NEXT_PUBLIC_STORAGE_SUPABASE_ANON_KEY",
+    "ABLY_API_KEY"
+  ],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+}

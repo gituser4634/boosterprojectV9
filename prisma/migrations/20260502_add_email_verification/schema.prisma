@@ -1,0 +1,391 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CLIENT
+  BOOSTER
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  RELEASED
+  FAILED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+enum NotificationType {
+  NEW_REQUEST
+  ORDER_ACCEPTED
+  MESSAGE
+  PAYMENT_RELEASED
+}
+
+enum ServiceType {
+  PLAYING
+  BOOSTING
+  COACHING
+}
+
+model User {
+  id                   String                  @id @default(uuid()) @db.Uuid
+  username             String                  @unique
+  displayName          String
+  email                String                  @unique
+  password             String
+  role                 Role
+  isActive             Boolean                 @default(true)
+  emailVerified        Boolean                 @default(false)
+  profilePictureUrl    String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  boosterProfile       BoosterProfile?
+  wallet               Wallet?
+  customerOrders       Order[]                 @relation("CustomerOrders")
+  sentMessages         Message[]               @relation("MessageSender")
+  reviewsGiven         Review[]                @relation("ReviewCustomer")
+  reportsFiled         Report[]                @relation("ReportReporter")
+  reportsReceived      Report[]                @relation("ReportReportedUser")
+  notifications        Notification[]
+  chatRequestsSent     ChatRequest[]           @relation("ChatRequestSender")
+  chatRequestsReceived ChatRequest[]           @relation("ChatRequestReceiver")
+  verificationTokens   VerificationToken[]
+  passwordResetTokens  PasswordResetToken[]
+
+  @@index([role])
+  @@index([isActive])
+  @@index([emailVerified])
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model BoosterProfile {
+  id            String            @id @default(uuid()) @db.Uuid
+  userId        String            @unique @db.Uuid
+  displayName   String
+  country       String?
+  age           Int?
+  mainGameId    String?           @db.Uuid
+  averageRating Decimal           @default(0) @db.Decimal(3, 2)
+  totalReviews  Int               @default(0)
+  successRate   Int               @default(100)
+  hours         Int               @default(0)
+  bio           String            @default("")
+  xp            Int               @default(0)
+  hourlyRate    Decimal           @default(0) @db.Decimal(10, 2)
+  isOnline      Boolean           @default(false)
+  lastSeenAt    DateTime          @default(now())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mainGame      Game?             @relation("BoosterMainGame", fields: [mainGameId], references: [id], onDelete: SetNull)
+  boosterGames  BoosterGame[]
+  reviews       Review[]          @relation("BoosterReviews")
+  orders        Order[]           @relation("BoosterOrders")
+  socials       BoosterSocial[]
+  languages     BoosterLanguage[]
+  payouts       Payout[]
+
+  @@index([mainGameId])
+  @@index([country])
+  @@index([averageRating])
+  @@index([isOnline])
+}
+
+model Game {
+  id               String           @id @default(uuid()) @db.Uuid
+  name             String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  ranks            Rank[]
+  mainGameBoosters BoosterProfile[] @relation("BoosterMainGame")
+  boosterGames     BoosterGame[]
+  orders           Order[]
+  services         Service[]
+}
+
+model Rank {
+  id               String        @id @default(uuid()) @db.Uuid
+  name             String
+  order            Int
+  gameId           String        @db.Uuid
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  game             Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  currentForOrders Order[]       @relation("OrderCurrentRank")
+  targetForOrders  Order[]       @relation("OrderTargetRank")
+  boosterGames     BoosterGame[]
+
+  @@unique([gameId, name])
+  @@unique([gameId, order])
+  @@index([gameId])
+}
+
+model BoosterGame {
+  id             String         @id @default(uuid()) @db.Uuid
+  boosterId      String         @db.Uuid
+  gameId         String         @db.Uuid
+  rankId         String         @db.Uuid
+  inGameUsername String         @default("")
+  createdAt      DateTime       @default(now())
+  booster        BoosterProfile @relation(fields: [boosterId], references: [id], onDelete: Cascade)
+  game           Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  rank           Rank           @relation(fields: [rankId], references: [id], onDelete: Restrict)
+
+  @@unique([boosterId, gameId])
+  @@index([gameId])
+  @@index([rankId])
+}
+
+model Order {
+  id            String               @id @default(uuid()) @db.Uuid
+  title         String?
+  customerId    String               @db.Uuid
+  boosterId     String               @db.Uuid
+  gameId        String               @db.Uuid
+  serviceId     String?              @db.Uuid
+  currentRankId String?              @db.Uuid
+  targetRankId  String?              @db.Uuid
+  price         Decimal              @db.Decimal(10, 2)
+  status        OrderStatus          @default(PENDING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  customer      User                 @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  booster       BoosterProfile       @relation("BoosterOrders", fields: [boosterId], references: [id], onDelete: Restrict)
+  game          Game                 @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  service       Service?             @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  currentRank   Rank?                @relation("OrderCurrentRank", fields: [currentRankId], references: [id], onDelete: Restrict)
+  targetRank    Rank?                @relation("OrderTargetRank", fields: [targetRankId], references: [id], onDelete: Restrict)
+  messages      Message[]
+  payment       Payment?
+  statusHistory OrderStatusHistory[]
+  review        Review?
+
+  @@index([customerId])
+  @@index([boosterId])
+  @@index([gameId])
+  @@index([serviceId])
+  @@index([status, createdAt])
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(uuid()) @db.Uuid
+  orderId   String      @db.Uuid
+  status    OrderStatus
+  changedAt DateTime    @default(now())
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  orderId      String        @unique @db.Uuid
+  amount       Decimal       @db.Decimal(10, 2)
+  boosterShare Decimal       @db.Decimal(10, 2)
+  platformFee  Decimal       @db.Decimal(10, 2)
+  status       PaymentStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payout {
+  id        String         @id @default(uuid()) @db.Uuid
+  boosterId String         @db.Uuid
+  amount    Decimal        @db.Decimal(10, 2)
+  status    PayoutStatus   @default(PENDING)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  booster   BoosterProfile @relation(fields: [boosterId], references: [id], onDelete: Cascade)
+
+  @@index([boosterId])
+  @@index([status, createdAt])
+}
+
+model Message {
+  id          String      @id @default(uuid()) @db.Uuid
+  orderId     String?     @db.Uuid
+  senderId    String      @db.Uuid
+  content     String
+  messageType MessageType @default(TEXT)
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  order       Order?      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender      User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+
+  // For non-order chats (pending requests)
+  chatRequestId String?      @db.Uuid
+  chatRequest   ChatRequest? @relation(fields: [chatRequestId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([senderId])
+  @@index([orderId, createdAt])
+  @@index([chatRequestId])
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+}
+
+model Review {
+  id         String         @id @default(uuid()) @db.Uuid
+  boosterId  String         @db.Uuid
+  customerId String         @db.Uuid
+  orderId    String         @unique @db.Uuid
+  rating     Int
+  comment    String         @default("")
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  booster    BoosterProfile @relation("BoosterReviews", fields: [boosterId], references: [id], onDelete: Cascade)
+  customer   User           @relation("ReviewCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([boosterId])
+  @@index([customerId])
+  @@index([orderId])
+}
+
+model Report {
+  id             String   @id @default(uuid()) @db.Uuid
+  reporterId     String   @db.Uuid
+  reportedUserId String   @db.Uuid
+  reason         String
+  createdAt      DateTime @default(now())
+  reporter       User     @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User     @relation("ReportReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([type])
+}
+
+model BoosterSocial {
+  id        String         @id @default(uuid()) @db.Uuid
+  boosterId String         @db.Uuid
+  platform  String
+  link      String
+  createdAt DateTime       @default(now())
+  booster   BoosterProfile @relation(fields: [boosterId], references: [id], onDelete: Cascade)
+
+  @@unique([boosterId, platform])
+  @@index([boosterId])
+}
+
+model BoosterLanguage {
+  id        String         @id @default(uuid()) @db.Uuid
+  boosterId String         @db.Uuid
+  language  String
+  createdAt DateTime       @default(now())
+  booster   BoosterProfile @relation(fields: [boosterId], references: [id], onDelete: Cascade)
+
+  @@unique([boosterId, language])
+  @@index([boosterId])
+}
+
+model Service {
+  id          String      @id @default(uuid()) @db.Uuid
+  gameId      String      @db.Uuid
+  type        ServiceType
+  title       String
+  description String?
+  basePrice   Decimal     @db.Decimal(10, 2)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  game   Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([gameId])
+  @@index([type])
+}
+
+enum ChatRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// Non-order chat initiated by a CLIENT to a BOOSTER.
+// Sits in the booster's "Message Requests" until accepted/declined.
+model ChatRequest {
+  id         String            @id @default(uuid()) @db.Uuid
+  senderId   String            @db.Uuid // always the client
+  receiverId String            @db.Uuid // always the booster
+  status     ChatRequestStatus @default(PENDING)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  sender     User              @relation("ChatRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User              @relation("ChatRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  messages   Message[]
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId])
+}

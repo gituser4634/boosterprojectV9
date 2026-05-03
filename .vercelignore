@@ -1,0 +1,16 @@
+.env
+.env.local
+.env.example
+.git
+.gitignore
+.next
+.vercelignore
+node_modules
+*.log
+test*.js
+test*.ts
+check-db.ts
+db.js
+dev.db
+prisma.config.ts
+README.md

@@ -1,0 +1,3 @@
+-- This migration was merged into the init migration
+-- The displayName column is now created in the initial schema
+-- No operation needed
