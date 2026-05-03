@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Check, X, AlertCircle } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
