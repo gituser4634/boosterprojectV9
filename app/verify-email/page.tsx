@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check, X, Loader } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();

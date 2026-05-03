@@ -19,6 +19,8 @@ import { Home, ClipboardList, MessageSquare, Settings as SettingsIcon, LayoutDas
 import { ClientSidebar } from "@/components/client/shell-navigation";
 import { BoosterSidebar } from "@/components/booster/shell-navigation";
 
+export const dynamic = "force-dynamic";
+
 type Booster = {
   id: string;
   name: string;

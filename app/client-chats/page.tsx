@@ -14,6 +14,8 @@ import { FileInput } from "@/components/ui/file-input";
 import { ClientSidebar, ClientMobileNav } from "@/components/client/shell-navigation";
 import { BoosterTopBar } from "@/components/booster/top-bar";
 
+export const dynamic = "force-dynamic";
+
 // Unified thread shape
 type Thread = {
   id: string;

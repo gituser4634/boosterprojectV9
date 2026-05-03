@@ -7,6 +7,8 @@ import { signOut } from "next-auth/react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useRealtimeChat } from "@/hooks/use-realtime-chat";
+
+export const dynamic = "force-dynamic";
 import {
   ArrowLeft,
   Info,
