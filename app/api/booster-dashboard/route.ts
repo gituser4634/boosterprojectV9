@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withRetry } from "@/lib/db-retry";
 
 export async function GET() {
   try {
@@ -10,27 +11,27 @@ export async function GET() {
       unreadNotifications,
       monthlyPayments,
     ] = await Promise.all([
-      prisma.order.count({
+      withRetry(async () => prisma.order.count({
         where: {
           status: { in: ["ACCEPTED", "IN_PROGRESS"] },
         },
-      }),
-      prisma.order.count({
+      })),
+      withRetry(async () => prisma.order.count({
         where: {
           status: "PENDING",
         },
-      }),
-      prisma.message.count({
+      })),
+      withRetry(async () => prisma.message.count({
         where: {
           isRead: false,
         },
-      }),
-      prisma.notification.count({
+      })),
+      withRetry(async () => prisma.notification.count({
         where: {
           isRead: false,
         },
-      }),
-      prisma.payment.aggregate({
+      })),
+      withRetry(async () => prisma.payment.aggregate({
         _sum: {
           amount: true,
         },
@@ -39,7 +40,7 @@ export async function GET() {
             gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
           },
         },
-      }),
+      })),
     ]);
 
     const monthlyEarnings = Number(monthlyPayments._sum.amount ?? 0);

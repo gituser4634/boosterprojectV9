@@ -9,16 +9,16 @@ const globalForPrismaV3 = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
+// Reuse pool in all environments (including production)
 const pool = globalForPrismaV3.pgPool ?? new Pool({ 
   connectionString,
-  max: 5, // Limit concurrent connections
+  max: 5,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrismaV3.pgPool = pool;
-}
+// Store globally to reuse across requests
+globalForPrismaV3.pgPool = pool;
 
 export const prisma =
   globalForPrismaV3.prisma ??
@@ -27,6 +27,5 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrismaV3.prisma = prisma;
-}
+// Store globally to reuse across requests
+globalForPrismaV3.prisma = prisma;

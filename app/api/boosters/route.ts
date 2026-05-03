@@ -1,28 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateBoosterRank } from "@/lib/booster-ranks";
+import { withRetry } from "@/lib/db-retry";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
 
   try {
-    const boosters = await prisma.boosterProfile.findMany({
-      include: {
-        user: true,
-        mainGame: true,
-        boosterGames: {
-          include: {
-            rank: true
-          }
+    const boosters = await withRetry(async () => {
+      return await prisma.boosterProfile.findMany({
+        include: {
+          user: true,
+          mainGame: true,
+          boosterGames: {
+            include: {
+              rank: true
+            }
+          },
+          reviews: true
         },
-        reviews: true
-      },
-      orderBy: [
-        { averageRating: 'desc' },
-        { successRate: 'desc' }
-      ],
-      take: limit
+        orderBy: [
+          { averageRating: 'desc' },
+          { successRate: 'desc' }
+        ],
+        take: limit
+      });
     });
 
     const formattedBoosters = boosters.map(booster => {

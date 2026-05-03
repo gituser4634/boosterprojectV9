@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withRetry } from "@/lib/db-retry";
 
 /**
  * GET /api/boosters/online
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
     const cutoffTime = new Date(Date.now() - offlineAfterMs);
 
     // Get all online boosters
-    const onlineBoosters = await prisma.boosterProfile.findMany({
+    const onlineBoosters = await withRetry(async () => prisma.boosterProfile.findMany({
       where: {
         isOnline: true,
         lastSeenAt: {
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
         successRate: true,
         xp: true,
       },
-    });
+    }));
 
     return NextResponse.json({
       onlineBoosters: onlineBoosters.map((b) => ({

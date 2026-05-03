@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { withRetry } from "@/lib/db-retry";
 
 export async function GET() {
   const session = await auth();
@@ -9,15 +10,15 @@ export async function GET() {
   }
 
   try {
-    const notifications = await prisma.notification.findMany({
+    const notifications = await withRetry(async () => prisma.notification.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       take: 20,
-    });
+    }));
 
-    const unreadCount = await prisma.notification.count({
+    const unreadCount = await withRetry(async () => prisma.notification.count({
       where: { userId: session.user.id, isRead: false },
-    });
+    }));
 
     return NextResponse.json({ notifications, unreadCount });
   } catch (error) {
@@ -37,15 +38,15 @@ export async function PATCH(req: Request) {
     const { notificationId, markAllAsRead } = body;
 
     if (markAllAsRead) {
-      await prisma.notification.updateMany({
+      await withRetry(async () => prisma.notification.updateMany({
         where: { userId: session.user.id, isRead: false },
         data: { isRead: true },
-      });
+      }));
     } else if (notificationId) {
-      await prisma.notification.update({
+      await withRetry(async () => prisma.notification.update({
         where: { id: notificationId, userId: session.user.id },
         data: { isRead: true },
-      });
+      }));
     }
 
     return NextResponse.json({ ok: true });
