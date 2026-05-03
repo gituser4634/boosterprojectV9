@@ -1,18 +1,21 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const apiKey = process.env.RESEND_API_KEY;
-if (!apiKey) {
-  console.error("RESEND_API_KEY is not set in environment variables");
-}
-const resend = new Resend(apiKey);
+const transporter = nodemailer.createTransport({
+  host: process.env.MAILHOG_HOST || "smtp.mailhog.site",
+  port: parseInt(process.env.MAILHOG_PORT || "2525"),
+  auth: {
+    user: process.env.MAILHOG_USER || "u_57cdbb55",
+    pass: process.env.MAILHOG_PASS || "p_30f97feba7a38421",
+  },
+});
 
 const DOMAIN = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const SENDER_EMAIL = process.env.RESEND_SENDER_EMAIL || "onboarding@resend.dev";
+const SENDER_EMAIL = process.env.MAILHOG_SENDER_EMAIL || "noreply@boosterproject.local";
 
 export async function sendVerificationEmail(email: string, code: string) {
   try {
-    const result = await resend.emails.send({
-      from: SENDER_EMAIL,
+    const result = await transporter.sendMail({
+      from: `"Booster Project" <${SENDER_EMAIL}>`,
       to: email,
       subject: "Verify Your Booster Project Account - " + code,
       html: `
@@ -57,6 +60,7 @@ export async function sendVerificationEmail(email: string, code: string) {
         </html>
       `,
     });
+    console.log("Verification email sent to:", email, "Response:", result);
     return { success: true };
   } catch (error) {
     console.error("Failed to send verification email:", error);
@@ -70,10 +74,9 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   try {
     console.log("Attempting to send password reset email to:", email);
     console.log("Reset link:", resetLink);
-    console.log("API Key set:", !!process.env.RESEND_API_KEY);
 
-    const result = await resend.emails.send({
-      from: SENDER_EMAIL,
+    const result = await transporter.sendMail({
+      from: `"Booster Project" <${SENDER_EMAIL}>`,
       to: email,
       subject: "Reset Your Booster Project Password",
       html: `
@@ -115,14 +118,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       `,
     });
     
-    console.log("Email send result:", result);
-    
-    if (result.error) {
-      console.error("Resend API error:", result.error);
-      return { success: false, error: result.error };
-    }
-    
-    console.log("Password reset email sent successfully, ID:", result.data?.id);
+    console.log("Password reset email sent successfully to:", email);
     return { success: true };
   } catch (error) {
     console.error("Failed to send password reset email:", error);

@@ -1,19 +1,20 @@
-import { loadEnvConfig } from "@next/env";
-import { prisma } from "@/lib/prisma";
+import { loadEnvConfig } from '@next/env';
+loadEnvConfig(process.cwd());
 
-const projectDir = process.cwd();
-loadEnvConfig(projectDir);
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-console.log("DATABASE_URL:", process.env.DATABASE_URL ? "SET" : "NOT SET");
-console.log("DIRECT_URL:", process.env.DIRECT_URL ? "SET" : "NOT SET");
+const connectionString = process.env.DATABASE_URL!;
+const pool = new Pool({ connectionString });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function deleteUsers() {
-  const emailsToDelete = ["childpatron@gmail.com", "medalihiza@proton.me"];
+  const emailsToDelete = ["taheroeurfelli@gmail.com"];
 
   try {
     console.log("Looking for users with emails:", emailsToDelete);
 
-    // Find users first to show what we're deleting
     const usersToDelete = await prisma.user.findMany({
       where: {
         email: {
@@ -32,7 +33,6 @@ async function deleteUsers() {
       console.log(`  - ${user.email} (${user.username})`);
     });
 
-    // Delete related records for each user
     for (const user of usersToDelete) {
       console.log(`Deleting data for user: ${user.email}`);
       
@@ -47,7 +47,6 @@ async function deleteUsers() {
       console.log("  - Deleted password reset tokens");
     }
 
-    // Delete the users
     const deleteResult = await prisma.user.deleteMany({
       where: {
         email: {
@@ -61,6 +60,9 @@ async function deleteUsers() {
   } catch (error) {
     console.error("Error deleting users:", error);
     process.exit(1);
+  } finally {
+    await prisma.$disconnect();
+    await pool.end();
   }
 }
 
