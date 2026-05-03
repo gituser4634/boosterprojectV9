@@ -15,10 +15,11 @@ type StatusUpdateBody = {
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const params = await context.params;
+    const { id } = params;
     const session = await auth();
     
     if (!session?.user?.id) {
@@ -97,10 +98,11 @@ export async function PUT(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const params = await context.params;
+    const { id } = params;
 
     const boosterProfile = await prisma.boosterProfile.findUnique({
       where: { userId: id },
