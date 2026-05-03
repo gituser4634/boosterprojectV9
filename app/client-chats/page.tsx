@@ -15,7 +15,6 @@ import { ClientSidebar, ClientMobileNav } from "@/components/client/shell-naviga
 import { BoosterTopBar } from "@/components/booster/top-bar";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 // Unified thread shape
 type Thread = {

@@ -10,7 +10,6 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Check, X, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
