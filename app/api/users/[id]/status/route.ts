@@ -15,9 +15,10 @@ type StatusUpdateBody = {
  */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
     
     if (!session?.user?.id) {
@@ -26,8 +27,6 @@ export async function PUT(
         { status: 401 }
       );
     }
-
-    const { id } = params;
     
     // Only allow users to update their own status
     if (session.user.id !== id) {
@@ -98,10 +97,10 @@ export async function PUT(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const boosterProfile = await prisma.boosterProfile.findUnique({
       where: { userId: id },
