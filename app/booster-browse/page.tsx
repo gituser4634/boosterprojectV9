@@ -20,6 +20,7 @@ import { ClientSidebar } from "@/components/client/shell-navigation";
 import { BoosterSidebar } from "@/components/booster/shell-navigation";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type Booster = {
   id: string;

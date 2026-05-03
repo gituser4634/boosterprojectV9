@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Loader } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();

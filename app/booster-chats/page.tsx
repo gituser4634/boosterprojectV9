@@ -9,6 +9,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useRealtimeChat } from "@/hooks/use-realtime-chat";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import {
   ArrowLeft,
   Info,
