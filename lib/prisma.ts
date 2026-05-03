@@ -9,7 +9,12 @@ const globalForPrismaV3 = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
-const pool = globalForPrismaV3.pgPool ?? new Pool({ connectionString });
+const pool = globalForPrismaV3.pgPool ?? new Pool({ 
+  connectionString,
+  max: 5, // Limit concurrent connections
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrismaV3.pgPool = pool;
